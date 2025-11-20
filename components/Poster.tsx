@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PosterData, PosterTheme } from '../types';
+import { PosterData } from '../types';
 import { ProgramList } from './ProgramList';
 
 interface PosterProps {
@@ -61,14 +61,17 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
   const style = themeConfig[data.theme || 'modern'];
   const { backgroundBlur, backgroundDarkness, contentOpacity } = data.styleSettings || { backgroundBlur: 0, backgroundDarkness: 0.2, contentOpacity: 0.5 };
   
-  // Default layout settings if missing (backward compatibility)
+  // Defaults if layout settings are missing
   const layout = data.layoutSettings || {
-    headerScale: 1,
-    programScale: 1,
-    footerScale: 1,
-    sectionGap: 4,
-    contentMargin: 8,
-    logoHeight: 48
+    titleSize: 3,
+    subtitleSize: 1,
+    metaSize: 0.9,
+    descriptionSize: 0.9,
+    programSize: 100,
+    contactSize: 0.8,
+    logoHeight: 40,
+    qrCodeSize: 80,
+    contentMargin: 8
   };
 
   const dynamicContainerStyle = {
@@ -101,32 +104,38 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
         {style.overlay}
       </div>
 
-      {/* Main Flex Container */}
+      {/* Main Layout Container (Flexbox Column) */}
       <div 
         className={`relative z-10 flex flex-col h-full ${style.fontBody}`}
         style={{ 
-          padding: `${layout.contentMargin * 4}px`,
-          gap: `${layout.sectionGap * 4}px`
+          padding: `${layout.contentMargin * 0.25}rem`,
+          gap: '1rem' 
         }}
       >
         
-        {/* Header Area */}
-        <header 
-          className="flex flex-col items-center origin-top mx-auto"
-          style={{ 
-            transform: `scale(${layout.headerScale})`,
-            width: `${100 / layout.headerScale}%`
-          }}
-        >
-          <div className="text-center space-y-2 mt-2 w-full">
-            <h2 className={`${style.subtitleColor} tracking-[0.2em] text-sm ${style.fontHeading} uppercase font-bold`}>
+        {/* HEADER SECTION (Flex Shrink 0 - Takes necessary space) */}
+        <header className="flex-shrink-0 flex flex-col items-center text-center w-full">
+            {/* Subtitle */}
+            <h2 
+              className={`${style.subtitleColor} tracking-[0.2em] ${style.fontHeading} uppercase font-bold mb-2`}
+              style={{ fontSize: `${layout.subtitleSize}rem` }}
+            >
               {data.subtitle}
             </h2>
-            <h1 className={`text-5xl font-bold ${style.fontHeading} ${style.titleColor} drop-shadow-lg leading-tight px-4`}>
+
+            {/* Title */}
+            <h1 
+              className={`font-bold ${style.fontHeading} ${style.titleColor} drop-shadow-lg leading-tight px-4 mb-3`}
+              style={{ fontSize: `${layout.titleSize}rem` }}
+            >
               {data.title}
             </h1>
             
-            <div className="flex items-center justify-center gap-4 text-sm font-light mt-2">
+            {/* Meta (Date/Location) */}
+            <div 
+              className="flex items-center justify-center gap-4 font-light mb-4"
+              style={{ fontSize: `${layout.metaSize}rem` }}
+            >
               <span className={`px-3 py-1 rounded-full border ${data.theme === 'classic' ? 'bg-amber-900/40 border-amber-500/40 text-amber-100' : 'bg-cyan-500/20 border-cyan-500/30'}`}>
                 📅 {data.date}
               </span>
@@ -135,52 +144,44 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
               </span>
             </div>
 
+            {/* Event Description */}
             {data.eventDescription && (
-              <div className="max-w-2xl mx-auto mt-4 px-6">
-                <p className={`text-center text-sm leading-relaxed ${data.theme === 'classic' ? 'text-amber-100/80 italic' : 'text-gray-300'}`}>
+              <div className="max-w-2xl mx-auto px-6">
+                <p 
+                  className={`text-center leading-relaxed ${data.theme === 'classic' ? 'text-amber-100/80 italic' : 'text-gray-300'}`}
+                  style={{ fontSize: `${layout.descriptionSize}rem` }}
+                >
                   {data.eventDescription}
                 </p>
               </div>
             )}
-          </div>
         </header>
 
-        {/* Main Content - Program */}
+        {/* PROGRAM SECTION (Flex Grow - Takes remaining space) */}
         <main 
-          className={`flex-grow rounded-xl p-6 ${style.containerClasses} transition-all origin-top`}
+          className={`flex-grow min-h-0 flex flex-col rounded-xl p-6 ${style.containerClasses} transition-all`}
           style={dynamicContainerStyle}
         >
-            <div className="w-full h-full flex flex-col">
-                <div 
-                  className="flex items-center gap-4 mb-6 origin-left"
-                  style={{ 
-                    transform: `scale(${layout.programScale})`,
-                    width: `${100 / layout.programScale}%`
-                  }}
-                >
-                    <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase whitespace-nowrap`}>
-                        {data.programTitle || 'PROGRAMME'}
-                    </h3>
-                    <div className="h-[1px] bg-white/20 flex-grow"></div>
-                </div>
-                <div className="flex-grow">
-                    <ProgramList 
-                      items={data.items} 
-                      scale={layout.programScale}
-                    />
-                </div>
+            {/* Program Title */}
+            <div className="flex-shrink-0 flex items-center gap-4 mb-4">
+                <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase whitespace-nowrap`}>
+                    {data.programTitle || 'PROGRAMME'}
+                </h3>
+                <div className="h-[1px] bg-white/20 flex-grow"></div>
+            </div>
+            
+            {/* Program List Area with overflow hidden to handle truncation cleanly */}
+            <div className="flex-grow overflow-hidden relative">
+                <ProgramList 
+                  items={data.items} 
+                  fontSizePercentage={layout.programSize}
+                />
             </div>
         </main>
 
-        {/* Footer Area */}
-        <footer 
-          className="flex flex-col gap-4 origin-bottom mx-auto"
-          style={{ 
-            transform: `scale(${layout.footerScale})`,
-            width: `${100 / layout.footerScale}%`
-          }}
-        >
-            {/* Logos Section */}
+        {/* FOOTER SECTION (Flex Shrink 0 - Takes necessary space) */}
+        <footer className="flex-shrink-0 flex flex-col gap-4">
+            {/* Logos */}
             {data.logos.length > 0 && (
               <div 
                 className={`w-full flex items-center justify-center flex-wrap gap-6 p-4 rounded-lg border backdrop-blur-sm ${data.theme === 'minimal' ? 'border-white/30' : 'border-white/10'}`}
@@ -198,8 +199,12 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
               </div>
             )}
 
-            <div className="flex justify-between items-end h-20 mt-2">
-                <div className="text-xs text-gray-400 max-w-[60%] space-y-1">
+            <div className="flex justify-between items-end mt-1">
+                {/* Contact Text */}
+                <div 
+                  className="text-gray-400 max-w-[70%] space-y-1 pb-1"
+                  style={{ fontSize: `${layout.contactSize}rem` }}
+                >
                     <p className={`font-bold ${data.theme === 'classic' ? 'text-amber-100' : 'text-white'}`}>
                       {data.contactTitle}
                     </p>
@@ -208,13 +213,17 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
                     </p>
                 </div>
                 
+                {/* QR Code */}
                 <div className="flex flex-col items-center gap-1">
-                    <div className="w-16 h-16 bg-white p-1 rounded shadow-lg shrink-0">
+                    <div 
+                      className="bg-white p-1 rounded shadow-lg shrink-0" 
+                      style={{ width: `${layout.qrCodeSize}px`, height: `${layout.qrCodeSize}px` }}
+                    >
                         {data.qrCodeUrl ? (
                           <img src={data.qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
                         ) : (
                           <div className="w-full h-full border-2 border-dashed border-slate-800 flex items-center justify-center">
-                              <span className="text-slate-800 text-[8px] font-bold text-center">QR CODE<br/>ICI</span>
+                              <span className="text-slate-800 text-[8px] font-bold text-center leading-tight">QR CODE<br/>ICI</span>
                           </div>
                         )}
                     </div>

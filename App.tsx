@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { Poster } from './components/Poster';
 import { PosterData, ProgramItem, PosterTheme, PosterStyleSettings, PosterLayoutSettings } from './types';
 import { generateSpaceBackground } from './services/gemini';
-import { Loader2, Sparkles, FileDown, Plus, Trash2, Upload, Image as ImageIcon, X, Palette, Sliders, Download, FileJson, QrCode, Layout, GripVertical } from 'lucide-react';
+import { Loader2, Sparkles, FileDown, Plus, Trash2, Upload, Image as ImageIcon, X, Palette, Sliders, Download, FileJson, QrCode, Layout, GripVertical, Text, Type } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
@@ -33,12 +33,15 @@ const DEFAULT_DATA: PosterData = {
     contentOpacity: 0.5
   },
   layoutSettings: {
-    headerScale: 1,
-    programScale: 1,
-    footerScale: 1,
-    sectionGap: 4,
-    contentMargin: 8,
-    logoHeight: 48
+    titleSize: 3,
+    subtitleSize: 0.875,
+    metaSize: 0.9,
+    descriptionSize: 0.9,
+    programSize: 100,
+    contactSize: 0.7,
+    logoHeight: 40,
+    qrCodeSize: 80,
+    contentMargin: 8
   },
   contactTitle: "Contact & Organisation",
   contactDetails: "Laboratoire Lagrange - Observatoire de la Côte d'Azur\nBoulevard de l'Observatoire, CS 34229, 06304 Nice Cedex 4",
@@ -279,6 +282,21 @@ const App: React.FC = () => {
     { id: 'minimal', label: 'Minimaliste', color: 'bg-gray-600' },
   ];
 
+  // Helper component for Size Sliders
+  const SizeSlider = ({ label, value, onChange, min, max, step = 0.1 }: { label: string, value: number, onChange: (v: number) => void, min: number, max: number, step?: number }) => (
+    <div className="flex items-center gap-2 mt-1 bg-slate-900/30 p-1.5 rounded border border-slate-700/50">
+      <Type size={12} className="text-slate-500" />
+      <span className="text-[10px] text-slate-400 w-16 truncate">{label}</span>
+      <input 
+        type="range" 
+        min={min} max={max} step={step} 
+        value={value} 
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="flex-grow h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer" 
+      />
+    </div>
+  );
+
   return (
     <div id="app-container" className="flex h-screen w-screen bg-slate-900 overflow-hidden text-slate-100 font-inter">
       
@@ -314,157 +332,53 @@ const App: React.FC = () => {
              </div>
           </section>
 
-          {/* Layout & Dimensions Section */}
-          <section className="space-y-4">
-             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-               <Layout size={16} /> Mise en page & Dimensions
-             </h3>
-             <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700 space-y-4">
-                {/* Header Scale */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Taille Entête</span>
-                    <span>{Math.round((data.layoutSettings?.headerScale || 1) * 100)}%</span>
-                  </div>
-                  <input type="range" min="0.5" max="1.5" step="0.05"
-                    value={data.layoutSettings?.headerScale || 1}
-                    onChange={(e) => updateLayoutSetting('headerScale', parseFloat(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                {/* Program Scale */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Taille Programme</span>
-                    <span>{Math.round((data.layoutSettings?.programScale || 1) * 100)}%</span>
-                  </div>
-                  <input type="range" min="0.5" max="1.3" step="0.05"
-                    value={data.layoutSettings?.programScale || 1}
-                    onChange={(e) => updateLayoutSetting('programScale', parseFloat(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                {/* Footer Scale */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Taille Pied de page</span>
-                    <span>{Math.round((data.layoutSettings?.footerScale || 1) * 100)}%</span>
-                  </div>
-                  <input type="range" min="0.5" max="1.5" step="0.05"
-                    value={data.layoutSettings?.footerScale || 1}
-                    onChange={(e) => updateLayoutSetting('footerScale', parseFloat(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                {/* Gaps */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Espacement Sections</span>
-                    <span>{data.layoutSettings?.sectionGap || 4}</span>
-                  </div>
-                  <input type="range" min="0" max="20" step="1"
-                    value={data.layoutSettings?.sectionGap || 4}
-                    onChange={(e) => updateLayoutSetting('sectionGap', parseInt(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                {/* Margin */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Marges Contenu</span>
-                    <span>{data.layoutSettings?.contentMargin || 8}</span>
-                  </div>
-                  <input type="range" min="0" max="24" step="2"
-                    value={data.layoutSettings?.contentMargin || 8}
-                    onChange={(e) => updateLayoutSetting('contentMargin', parseInt(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                {/* Logo Height */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>Taille Logos</span>
-                    <span>{data.layoutSettings?.logoHeight || 48}px</span>
-                  </div>
-                  <input type="range" min="20" max="100" step="4"
-                    value={data.layoutSettings?.logoHeight || 48}
-                    onChange={(e) => updateLayoutSetting('logoHeight', parseInt(e.target.value))}
-                    className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-             </div>
-          </section>
-
           {/* Global Info Section */}
           <section className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               Informations Générales
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Titre Principal</label>
                 <input type="text" value={data.title} onChange={(e) => updateField('title', e.target.value)}
                   className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none transition-colors" />
+                <SizeSlider label="Taille Titre" value={data.layoutSettings?.titleSize || 3} min={1.5} max={5} onChange={(v) => updateLayoutSetting('titleSize', v)} />
               </div>
+              
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Sous-titre</label>
                 <input type="text" value={data.subtitle} onChange={(e) => updateField('subtitle', e.target.value)}
                   className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+                <SizeSlider label="Taille Sous-titre" value={data.layoutSettings?.subtitleSize || 1} min={0.5} max={2} onChange={(v) => updateLayoutSetting('subtitleSize', v)} />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Date</label>
-                  <input type="text" value={data.date} onChange={(e) => updateField('date', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Lieu</label>
-                  <input type="text" value={data.location} onChange={(e) => updateField('location', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+                <div className="col-span-2">
+                  <div className="flex gap-3 mb-1">
+                    <div className="flex-1">
+                       <label className="block text-xs text-slate-400 mb-1">Date</label>
+                       <input type="text" value={data.date} onChange={(e) => updateField('date', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm" />
+                    </div>
+                    <div className="flex-1">
+                       <label className="block text-xs text-slate-400 mb-1">Lieu</label>
+                       <input type="text" value={data.location} onChange={(e) => updateField('location', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm" />
+                    </div>
+                  </div>
+                  <SizeSlider label="Taille Infos" value={data.layoutSettings?.metaSize || 0.9} min={0.5} max={1.5} onChange={(v) => updateLayoutSetting('metaSize', v)} />
                 </div>
               </div>
+
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Description</label>
                 <textarea value={data.eventDescription} onChange={(e) => updateField('eventDescription', e.target.value)}
                   className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none h-20" />
+                <SizeSlider label="Taille Desc." value={data.layoutSettings?.descriptionSize || 0.9} min={0.5} max={1.5} onChange={(v) => updateLayoutSetting('descriptionSize', v)} />
               </div>
             </div>
           </section>
 
-          {/* Footer & Contact */}
-          <section className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-              Pied de page
-            </h3>
-            <div className="space-y-3">
-               <div>
-                <label className="block text-xs text-slate-400 mb-1">Titre Contact</label>
-                <input type="text" value={data.contactTitle} onChange={(e) => updateField('contactTitle', e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Détails Contact</label>
-                <textarea value={data.contactDetails} onChange={(e) => updateField('contactDetails', e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none h-20" />
-              </div>
-              <div className="p-3 bg-slate-900/50 rounded border border-slate-700 flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                   {data.qrCodeUrl ? <img src={data.qrCodeUrl} className="w-10 h-10 object-contain bg-white rounded p-0.5" alt="QR" /> : <div className="w-10 h-10 bg-slate-700 rounded flex items-center justify-center"><QrCode size={20} className="text-slate-400" /></div>}
-                   <div className="flex flex-col">
-                     <span className="text-xs font-bold">QR Code</span>
-                     <span className="text-[10px] text-slate-500">{data.qrCodeUrl ? 'Image chargée' : 'Aucune image'}</span>
-                   </div>
-                 </div>
-                 <div className="flex gap-1">
-                   {data.qrCodeUrl && <button onClick={() => updateField('qrCodeUrl', null)} className="p-2 bg-red-900/50 text-red-400 rounded hover:bg-red-900"><Trash2 size={14} /></button>}
-                   <label className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded cursor-pointer"><Upload size={14} /><input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'qr')} /></label>
-                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Background */}
-          <section className="space-y-4">
+           {/* Background */}
+           <section className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               Fond & Apparence
             </h3>
@@ -478,6 +392,13 @@ const App: React.FC = () => {
                   </button>
               </div>
             </div>
+            
+            {/* Global Margin Slider moved here */}
+            <div className="space-y-1">
+                 <div className="flex justify-between text-[10px] text-slate-400"><span>Marge Globale</span><span>{data.layoutSettings?.contentMargin || 8}</span></div>
+                 <input type="range" min="0" max="16" step="1" value={data.layoutSettings?.contentMargin || 8} onChange={(e) => updateLayoutSetting('contentMargin', parseInt(e.target.value))} className="w-full h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer" />
+            </div>
+
             <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700 space-y-4">
                <div className="flex items-center gap-2 text-xs text-slate-300 mb-1"><Sliders size={12} /> Réglages Fins</div>
                <div className="space-y-1">
@@ -503,8 +424,9 @@ const App: React.FC = () => {
           {/* Logos (Drag & Drop) */}
           <section className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-              Logos (Drag & Drop)
+            Logos (Drag & Drop)
             </h3>
+            
             <div className="bg-slate-900/50 rounded-lg border border-slate-700 p-3">
                <div className="grid grid-cols-3 gap-2 mb-3">
                   {data.logos.map((logo, idx) => (
@@ -524,7 +446,10 @@ const App: React.FC = () => {
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'logo')} />
                   </label>
                </div>
-               <p className="text-[10px] text-slate-500">Glissez-déposez pour réorganiser.</p>
+               <div className="space-y-2 pt-2 border-t border-slate-700/30">
+                 <SizeSlider label="Taille Logos" value={data.layoutSettings?.logoHeight || 40} min={20} max={150} step={5} onChange={(v) => updateLayoutSetting('logoHeight', v)} />
+                 <p className="text-[10px] text-slate-500 text-center">Glissez-déposez pour réorganiser.</p>
+               </div>
             </div>
           </section>
 
@@ -535,7 +460,9 @@ const App: React.FC = () => {
               <button onClick={addProgramItem} className="text-cyan-400 hover:text-cyan-300 p-1"><Plus size={16} /></button>
             </div>
             <div className="mb-2">
+              <label className="block text-xs text-slate-400 mb-1">Titre Section</label>
               <input type="text" value={data.programTitle} onChange={(e) => updateField('programTitle', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm font-bold uppercase" />
+              <SizeSlider label="Taille Texte Prog." value={data.layoutSettings?.programSize || 100} min={50} max={150} step={5} onChange={(v) => updateLayoutSetting('programSize', v)} />
             </div>
             <div className="space-y-3">
               {data.items.map((item, index) => (
@@ -563,6 +490,43 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Footer & Contact */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+              Pied de page
+            </h3>
+            <div className="space-y-3">
+               <div>
+                <label className="block text-xs text-slate-400 mb-1">Titre Contact</label>
+                <input type="text" value={data.contactTitle} onChange={(e) => updateField('contactTitle', e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Détails Contact</label>
+                <textarea value={data.contactDetails} onChange={(e) => updateField('contactDetails', e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none resize-none h-20" />
+                <SizeSlider label="Taille Contact" value={data.layoutSettings?.contactSize || 0.7} min={0.4} max={1.2} onChange={(v) => updateLayoutSetting('contactSize', v)} />
+              </div>
+
+              <div className="p-3 bg-slate-900/50 rounded border border-slate-700">
+                 <div className="flex items-center justify-between mb-2">
+                     <div className="flex items-center gap-2">
+                        {data.qrCodeUrl ? <img src={data.qrCodeUrl} className="w-10 h-10 object-contain bg-white rounded p-0.5" alt="QR" /> : <div className="w-10 h-10 bg-slate-700 rounded flex items-center justify-center"><QrCode size={20} className="text-slate-400" /></div>}
+                        <div className="flex flex-col">
+                            <span className="text-xs font-bold">QR Code</span>
+                            <span className="text-[10px] text-slate-500">{data.qrCodeUrl ? 'Image chargée' : 'Aucune image'}</span>
+                        </div>
+                     </div>
+                     <div className="flex gap-1">
+                        {data.qrCodeUrl && <button onClick={() => updateField('qrCodeUrl', null)} className="p-2 bg-red-900/50 text-red-400 rounded hover:bg-red-900"><Trash2 size={14} /></button>}
+                        <label className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded cursor-pointer"><Upload size={14} /><input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'qr')} /></label>
+                     </div>
+                 </div>
+                 <SizeSlider label="Taille QR" value={data.layoutSettings?.qrCodeSize || 80} min={40} max={150} step={5} onChange={(v) => updateLayoutSetting('qrCodeSize', v)} />
+              </div>
             </div>
           </section>
 

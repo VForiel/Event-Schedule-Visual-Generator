@@ -16,12 +16,20 @@ export interface PosterStyleSettings {
 }
 
 export interface PosterLayoutSettings {
-  headerScale: number;
-  programScale: number;
-  footerScale: number;
-  sectionGap: number;
+  // Font sizes are generally relative multipliers (e.g., 1.0 = base size) or direct rem values
+  titleSize: number; 
+  subtitleSize: number;
+  metaSize: number;
+  descriptionSize: number;
+  programSize: number; // Percentage
+  contactSize: number;
+  
+  // Dimensions in px
+  logoHeight: number; 
+  qrCodeSize: number; 
+  
+  // Spacing
   contentMargin: number;
-  logoHeight: number;
 }
 
 export interface PosterData {
