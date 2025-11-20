@@ -23,6 +23,7 @@ export interface PosterData {
   eventDescription: string;
   backgroundUrl: string;
   items: ProgramItem[];
+  programTitle: string; // New field
   logos: string[];
   theme: PosterTheme;
   styleSettings: PosterStyleSettings;

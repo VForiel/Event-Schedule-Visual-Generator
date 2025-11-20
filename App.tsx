@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Poster } from './components/Poster';
 import { PosterData, ProgramItem, PosterTheme, PosterStyleSettings } from './types';
 import { generateSpaceBackground } from './services/gemini';
-import { Loader2, Sparkles, Printer, Plus, Trash2, Upload, Image as ImageIcon, X, Palette, Sliders, Download, FileJson, Save, QrCode } from 'lucide-react';
+import { Loader2, Sparkles, FileDown, Plus, Trash2, Upload, Image as ImageIcon, X, Palette, Sliders, Download, FileJson, QrCode } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 
 // Default data
 const DEFAULT_ITEMS: ProgramItem[] = Array.from({ length: 8 }).map((_, i) => ({
@@ -23,6 +24,7 @@ const DEFAULT_DATA: PosterData = {
   eventDescription: "Une journée dédiée à la présentation des travaux de recherche des doctorants et chercheurs du laboratoire, favorisant les échanges interdisciplinaires en astrophysique.",
   backgroundUrl: "https://picsum.photos/seed/lagrange/1200/1600", 
   items: DEFAULT_ITEMS,
+  programTitle: "PROGRAMME",
   logos: [],
   theme: 'modern',
   styleSettings: {
@@ -40,6 +42,7 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [zoom, setZoom] = useState(0.6);
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const handleGenerateBackground = async () => {
     setIsGenerating(true);
@@ -126,8 +129,44 @@ const App: React.FC = () => {
     }));
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPDF = async () => {
+    const node = document.getElementById('poster-wrapper');
+    if (!node) return;
+
+    setIsExportingPDF(true);
+    try {
+      // Capture as PNG first, forcing scale to 1 to avoid artifacts and ensuring A4 dimensions
+      const dataUrl = await toPng(node, {
+        quality: 1.0,
+        pixelRatio: 2,
+        cacheBust: true,
+        width: 794, // Approx A4 width in pixels at 96 DPI (but pixelRatio increases quality)
+        height: 1123, // Approx A4 height in pixels
+        style: {
+           transform: 'scale(1)',
+           transformOrigin: 'top left'
+        }
+      });
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('lagrange-programme.pdf');
+
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Erreur lors de l\'exportation PDF.');
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   const handleExportImage = async () => {
@@ -136,10 +175,17 @@ const App: React.FC = () => {
     
     setIsExportingImage(true);
     try {
+      // Force dimensions and scale to ensure clean crop
       const dataUrl = await toPng(node, {
         quality: 1.0,
-        pixelRatio: 2, // Higher resolution
+        pixelRatio: 3, // High resolution for image export
         cacheBust: true,
+        width: 794, // Force correct aspect ratio base width
+        height: 1123,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        }
       });
       const link = document.createElement('a');
       link.download = 'lagrange-poster.png';
@@ -171,12 +217,23 @@ const App: React.FC = () => {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        // Basic validation check
-        if (json.items && Array.isArray(json.items)) {
-          setData(json);
-        } else {
-          alert("Format de fichier invalide.");
-        }
+        
+        // Safe Merge: Merge default data with imported data to prevent crashes on missing fields
+        // This handles backward compatibility with older saves
+        const mergedData: PosterData = {
+           ...DEFAULT_DATA,
+           ...json,
+           // Ensure nested objects are merged or default back
+           styleSettings: {
+             ...DEFAULT_DATA.styleSettings,
+             ...(json.styleSettings || {})
+           },
+           // Ensure arrays exist
+           items: Array.isArray(json.items) ? json.items : DEFAULT_DATA.items,
+           logos: Array.isArray(json.logos) ? json.logos : DEFAULT_DATA.logos
+        };
+
+        setData(mergedData);
       } catch (error) {
         console.error("Error parsing JSON", error);
         alert("Erreur lors de la lecture du fichier.");
@@ -495,6 +552,16 @@ const App: React.FC = () => {
                 <Plus size={16} />
               </button>
             </div>
+
+            <div className="mb-2">
+              <label className="block text-xs text-slate-400 mb-1">Titre de la section (ex: PROGRAMME)</label>
+              <input 
+                type="text" 
+                value={data.programTitle}
+                onChange={(e) => updateField('programTitle', e.target.value)}
+                className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none uppercase font-bold"
+              />
+            </div>
             
             <div className="space-y-3">
               {data.items.map((item, index) => (
@@ -564,7 +631,7 @@ const App: React.FC = () => {
             {/* Image Export */}
             <button 
               onClick={handleExportImage}
-              disabled={isExportingImage}
+              disabled={isExportingImage || isExportingPDF}
               className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold text-xs transition-colors flex items-center justify-center gap-2"
             >
               {isExportingImage ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
@@ -573,10 +640,12 @@ const App: React.FC = () => {
 
             {/* PDF/Print */}
             <button 
-              onClick={handlePrint}
+              onClick={handleExportPDF}
+              disabled={isExportingImage || isExportingPDF}
               className="flex-1 py-3 bg-slate-100 hover:bg-white text-slate-900 rounded font-bold text-xs transition-colors flex items-center justify-center gap-2"
             >
-              <Printer size={16} /> PDF
+               {isExportingPDF ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+               PDF
             </button>
           </div>
         </div>

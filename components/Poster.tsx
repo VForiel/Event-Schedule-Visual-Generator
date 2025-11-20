@@ -133,8 +133,8 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
         >
             <div className="w-full h-full flex flex-col">
                 <div className="flex items-center gap-4 mb-6">
-                    <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4`}>
-                        PROGRAMME
+                    <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase`}>
+                        {data.programTitle || 'PROGRAMME'}
                     </h3>
                     <div className="h-[1px] bg-white/20 flex-grow"></div>
                 </div>
