@@ -112,10 +112,13 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
         
         {/* Header Area */}
         <header 
-          className="flex flex-col items-center origin-top"
-          style={{ transform: `scale(${layout.headerScale})` }}
+          className="flex flex-col items-center origin-top mx-auto"
+          style={{ 
+            transform: `scale(${layout.headerScale})`,
+            width: `${100 / layout.headerScale}%`
+          }}
         >
-          <div className="text-center space-y-2 mt-2">
+          <div className="text-center space-y-2 mt-2 w-full">
             <h2 className={`${style.subtitleColor} tracking-[0.2em] text-sm ${style.fontHeading} uppercase font-bold`}>
               {data.subtitle}
             </h2>
@@ -149,10 +152,13 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
         >
             <div className="w-full h-full flex flex-col">
                 <div 
-                  className="flex items-center gap-4 mb-6"
-                  style={{ transform: `scale(${layout.programScale})`, transformOrigin: 'left center' }}
+                  className="flex items-center gap-4 mb-6 origin-left"
+                  style={{ 
+                    transform: `scale(${layout.programScale})`,
+                    width: `${100 / layout.programScale}%`
+                  }}
                 >
-                    <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase`}>
+                    <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase whitespace-nowrap`}>
                         {data.programTitle || 'PROGRAMME'}
                     </h3>
                     <div className="h-[1px] bg-white/20 flex-grow"></div>
@@ -168,8 +174,11 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
 
         {/* Footer Area */}
         <footer 
-          className="flex flex-col gap-4 origin-bottom"
-          style={{ transform: `scale(${layout.footerScale})` }}
+          className="flex flex-col gap-4 origin-bottom mx-auto"
+          style={{ 
+            transform: `scale(${layout.footerScale})`,
+            width: `${100 / layout.footerScale}%`
+          }}
         >
             {/* Logos Section */}
             {data.logos.length > 0 && (
@@ -183,7 +192,7 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
                     src={logo} 
                     alt={`Partner Logo ${index}`} 
                     style={{ height: `${layout.logoHeight}px` }}
-                    className="object-contain brightness-0 invert opacity-80 hover:opacity-100 transition-opacity" 
+                    className="object-contain brightness-0 invert opacity-80 hover:opacity-100 transition-opacity max-w-full" 
                    />
                  ))}
               </div>
@@ -200,7 +209,7 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
                 </div>
                 
                 <div className="flex flex-col items-center gap-1">
-                    <div className="w-16 h-16 bg-white p-1 rounded shadow-lg">
+                    <div className="w-16 h-16 bg-white p-1 rounded shadow-lg shrink-0">
                         {data.qrCodeUrl ? (
                           <img src={data.qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
                         ) : (
