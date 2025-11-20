@@ -17,8 +17,8 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
       fontBody: 'font-inter',
       titleColor: 'text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-slate-300',
       subtitleColor: 'text-cyan-400',
-      containerClasses: 'border border-white/10 backdrop-blur-sm', // Removed fixed bg
-      containerBaseColor: '0, 0, 0', // RGB for Black
+      containerClasses: 'border border-white/10 backdrop-blur-sm', 
+      containerBaseColor: '0, 0, 0', 
       accentColor: 'border-cyan-500',
       overlay: (
         <>
@@ -34,8 +34,8 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
       fontBody: 'font-inter',
       titleColor: 'text-amber-50',
       subtitleColor: 'text-amber-200/80',
-      containerClasses: 'border-2 border-double border-amber-500/30', // Removed fixed bg
-      containerBaseColor: '15, 23, 42', // RGB for Slate-900
+      containerClasses: 'border-2 border-double border-amber-500/30', 
+      containerBaseColor: '15, 23, 42', 
       accentColor: 'border-amber-500/50',
       overlay: (
         <>
@@ -49,8 +49,8 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
       fontBody: 'font-inter',
       titleColor: 'text-white',
       subtitleColor: 'text-gray-300',
-      containerClasses: 'backdrop-blur-md border border-white/20', // Removed fixed bg
-      containerBaseColor: '255, 255, 255', // RGB for White
+      containerClasses: 'backdrop-blur-md border border-white/20',
+      containerBaseColor: '255, 255, 255',
       accentColor: 'border-white',
       overlay: (
         <div className="absolute inset-0 bg-black/20 pointer-events-none" />
@@ -60,8 +60,17 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
 
   const style = themeConfig[data.theme || 'modern'];
   const { backgroundBlur, backgroundDarkness, contentOpacity } = data.styleSettings || { backgroundBlur: 0, backgroundDarkness: 0.2, contentOpacity: 0.5 };
+  
+  // Default layout settings if missing (backward compatibility)
+  const layout = data.layoutSettings || {
+    headerScale: 1,
+    programScale: 1,
+    footerScale: 1,
+    sectionGap: 4,
+    contentMargin: 8,
+    logoHeight: 48
+  };
 
-  // Dynamic background color for containers based on theme base color and slider opacity
   const dynamicContainerStyle = {
     backgroundColor: `rgba(${style.containerBaseColor}, ${contentOpacity})`
   };
@@ -85,7 +94,6 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
           className="w-full h-full object-cover"
           style={{ filter: `blur(${backgroundBlur}px)` }}
         />
-        {/* Dynamic Darkening Overlay */}
         <div 
           className="absolute inset-0 bg-black pointer-events-none transition-opacity" 
           style={{ opacity: backgroundDarkness }} 
@@ -93,12 +101,21 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
         {style.overlay}
       </div>
 
-      {/* Grid Layout Layer */}
-      <div className={`relative z-10 flex flex-col h-full p-8 ${style.fontBody}`}>
+      {/* Main Flex Container */}
+      <div 
+        className={`relative z-10 flex flex-col h-full ${style.fontBody}`}
+        style={{ 
+          padding: `${layout.contentMargin * 4}px`,
+          gap: `${layout.sectionGap * 4}px`
+        }}
+      >
         
         {/* Header Area */}
-        <header className="flex flex-col items-center mb-4 space-y-4">
-          <div className="text-center space-y-2 mt-6">
+        <header 
+          className="flex flex-col items-center origin-top"
+          style={{ transform: `scale(${layout.headerScale})` }}
+        >
+          <div className="text-center space-y-2 mt-2">
             <h2 className={`${style.subtitleColor} tracking-[0.2em] text-sm ${style.fontHeading} uppercase font-bold`}>
               {data.subtitle}
             </h2>
@@ -115,7 +132,6 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
               </span>
             </div>
 
-            {/* Event Description */}
             {data.eventDescription && (
               <div className="max-w-2xl mx-auto mt-4 px-6">
                 <p className={`text-center text-sm leading-relaxed ${data.theme === 'classic' ? 'text-amber-100/80 italic' : 'text-gray-300'}`}>
@@ -128,24 +144,33 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
 
         {/* Main Content - Program */}
         <main 
-          className={`flex-grow rounded-xl p-6 mb-4 ${style.containerClasses} transition-all`}
+          className={`flex-grow rounded-xl p-6 ${style.containerClasses} transition-all origin-top`}
           style={dynamicContainerStyle}
         >
             <div className="w-full h-full flex flex-col">
-                <div className="flex items-center gap-4 mb-6">
+                <div 
+                  className="flex items-center gap-4 mb-6"
+                  style={{ transform: `scale(${layout.programScale})`, transformOrigin: 'left center' }}
+                >
                     <h3 className={`text-2xl ${style.fontHeading} font-semibold border-b-2 ${style.accentColor} pb-1 pr-4 uppercase`}>
                         {data.programTitle || 'PROGRAMME'}
                     </h3>
                     <div className="h-[1px] bg-white/20 flex-grow"></div>
                 </div>
                 <div className="flex-grow">
-                    <ProgramList items={data.items} />
+                    <ProgramList 
+                      items={data.items} 
+                      scale={layout.programScale}
+                    />
                 </div>
             </div>
         </main>
 
         {/* Footer Area */}
-        <footer className="flex flex-col gap-4">
+        <footer 
+          className="flex flex-col gap-4 origin-bottom"
+          style={{ transform: `scale(${layout.footerScale})` }}
+        >
             {/* Logos Section */}
             {data.logos.length > 0 && (
               <div 
@@ -157,7 +182,8 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
                     key={index} 
                     src={logo} 
                     alt={`Partner Logo ${index}`} 
-                    className="h-12 object-contain brightness-0 invert opacity-80 hover:opacity-100 transition-opacity" 
+                    style={{ height: `${layout.logoHeight}px` }}
+                    className="object-contain brightness-0 invert opacity-80 hover:opacity-100 transition-opacity" 
                    />
                  ))}
               </div>
@@ -173,7 +199,6 @@ export const Poster: React.FC<PosterProps> = ({ data, scale = 1 }) => {
                     </p>
                 </div>
                 
-                {/* QR Code Section */}
                 <div className="flex flex-col items-center gap-1">
                     <div className="w-16 h-16 bg-white p-1 rounded shadow-lg">
                         {data.qrCodeUrl ? (

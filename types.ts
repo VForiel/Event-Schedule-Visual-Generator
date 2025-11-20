@@ -15,6 +15,15 @@ export interface PosterStyleSettings {
   contentOpacity: number; // 0 to 1
 }
 
+export interface PosterLayoutSettings {
+  headerScale: number;
+  programScale: number;
+  footerScale: number;
+  sectionGap: number;
+  contentMargin: number;
+  logoHeight: number;
+}
+
 export interface PosterData {
   title: string;
   subtitle: string;
@@ -23,11 +32,11 @@ export interface PosterData {
   eventDescription: string;
   backgroundUrl: string;
   items: ProgramItem[];
-  programTitle: string; // New field
+  programTitle: string;
   logos: string[];
   theme: PosterTheme;
   styleSettings: PosterStyleSettings;
-  // New fields
+  layoutSettings: PosterLayoutSettings;
   contactTitle: string;
   contactDetails: string;
   qrCodeUrl: string | null;
